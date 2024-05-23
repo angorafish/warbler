@@ -1,7 +1,5 @@
 """SQLAlchemy models for Warbler."""
-
 from datetime import datetime
-
 from flask_bcrypt import Bcrypt
 from flask_sqlalchemy import SQLAlchemy
 
@@ -11,7 +9,6 @@ db = SQLAlchemy()
 
 class Follows(db.Model):
     """Connection of a follower <-> followed_user."""
-
     __tablename__ = 'follows'
 
     user_being_followed_id = db.Column(
@@ -29,7 +26,6 @@ class Follows(db.Model):
 
 class Likes(db.Model):
     """Mapping user likes to warbles."""
-
     __tablename__ = 'likes' 
 
     id = db.Column(
@@ -39,19 +35,17 @@ class Likes(db.Model):
 
     user_id = db.Column(
         db.Integer,
-        db.ForeignKey('users.id', ondelete='cascade')
+        db.ForeignKey('users.id', ondelete='cascade'),
     )
 
     message_id = db.Column(
         db.Integer,
         db.ForeignKey('messages.id', ondelete='cascade'),
-        unique=True
     )
 
 
 class User(db.Model):
     """User in the system."""
-
     __tablename__ = 'users'
 
     id = db.Column(
@@ -94,8 +88,7 @@ class User(db.Model):
         nullable=False,
     )
 
-    messages = db.relationship('Message')
-
+    messages = db.relationship('Message', backref='user', lazy=True)
     followers = db.relationship(
         "User",
         secondary="follows",
@@ -112,30 +105,24 @@ class User(db.Model):
 
     likes = db.relationship(
         'Message',
-        secondary="likes"
+        secondary="likes",
+        backref='liked_by'
     )
 
     def __repr__(self):
         return f"<User #{self.id}: {self.username}, {self.email}>"
 
+    def is_following(self, other_user):
+        """Is this user following `other_user`?"""
+        return any(user.id == other_user.id for user in self.following)
+
     def is_followed_by(self, other_user):
         """Is this user followed by `other_user`?"""
-
-        found_user_list = [user for user in self.followers if user == other_user]
-        return len(found_user_list) == 1
-
-    def is_following(self, other_user):
-        """Is this user following `other_use`?"""
-
-        found_user_list = [user for user in self.following if user == other_user]
-        return len(found_user_list) == 1
+        return any(user.id == other_user.id for user in self.followers)
 
     @classmethod
     def signup(cls, username, email, password, image_url):
-        """Sign up user.
-
-        Hashes password and adds user to system.
-        """
+        """Sign up user. Hashes password and adds user to system."""
 
         hashed_pwd = bcrypt.generate_password_hash(password).decode('UTF-8')
 
@@ -188,7 +175,7 @@ class Message(db.Model):
     timestamp = db.Column(
         db.DateTime,
         nullable=False,
-        default=datetime.utcnow(),
+        default=datetime.utcnow,
     )
 
     user_id = db.Column(
@@ -196,9 +183,6 @@ class Message(db.Model):
         db.ForeignKey('users.id', ondelete='CASCADE'),
         nullable=False,
     )
-
-    user = db.relationship('User')
-
 
 def connect_db(app):
     """Connect this database to provided Flask app.

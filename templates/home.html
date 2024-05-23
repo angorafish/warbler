@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
 {% block content %}
   <div class="row">
 
@@ -33,6 +33,12 @@
                 <a href="/users/{{ g.user.id }}/followers">{{ g.user.followers | length }}</a>
               </h4>
             </li>
+            <li class="stat">
+              <p class="small">Likes</p>
+              <h4>
+                <a href="/users/{{ g.user.id }}/likes">{{ g.user.likes | length }}</a>
+              </h4>
+            </li>
           </ul>
         </div>
       </div>
@@ -51,13 +57,9 @@
               <span class="text-muted">{{ msg.timestamp.strftime('%d %B %Y') }}</span>
               <p>{{ msg.text }}</p>
             </div>
-            <form method="POST" action="/users/add_like/{{ msg.id }}" id="messages-form">
-              <button class="
-                btn 
-                btn-sm 
-                {{'btn-primary' if msg.id in likes else 'btn-secondary'}}"
-              >
-                <i class="fa fa-thumbs-up"></i> 
+            <form method="POST" action="/messages/{{ msg.id }}/{{ 'unlike' if msg.id in likes else 'like' }}">
+              <button type="submit" class="btn btn-sm {{ 'btn-primary' if msg.id in likes else 'btn-secondary' }}">
+                <i class="fa fa-thumbs-up"></i> {{ 'Unlike' if msg.id in likes else 'Like' }}
               </button>
             </form>
           </li>
