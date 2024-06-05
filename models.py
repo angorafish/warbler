@@ -2,6 +2,7 @@
 from datetime import datetime
 from flask_bcrypt import Bcrypt
 from flask_sqlalchemy import SQLAlchemy
+from flask_login import UserMixin
 
 bcrypt = Bcrypt()
 db = SQLAlchemy()
@@ -44,7 +45,7 @@ class Likes(db.Model):
     )
 
 
-class User(db.Model):
+class User(db.Model, UserMixin):
     """User in the system."""
     __tablename__ = 'users'
 
@@ -108,6 +109,14 @@ class User(db.Model):
         secondary="likes",
         backref='liked_by'
     )
+
+    def is_active(self):
+        """True, as all users are active."""
+        return True
+    
+    def get_id(self):
+        """Return the email address to satisfy Flask-Login's requirements."""
+        return self.id
 
     def __repr__(self):
         return f"<User #{self.id}: {self.username}, {self.email}>"
