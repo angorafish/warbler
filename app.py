@@ -16,7 +16,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = (
     os.environ.get('DATABASE_URL', 'postgresql:///warbler'))
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SQLALCHEMY_ECHO'] = False
-app.config['DEBUG_TB_INTERCEPT_REDIRECTS'] = True
+app.config['DEBUG_TB_INTERCEPT_REDIRECTS'] = False
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', "it's a secret")
 app.config['DEBUG'] = True
 app.config['ENV'] = 'development'
@@ -329,12 +329,15 @@ def homepage():
     - logged in: 100 most recent messages of followed_users
     """
     if g.user:
-        following_ids = [f.id for f in g.user.following] + [g.user.id]
-        messages = (Message.query.filter(Message.user_id.in_(following_ids))
+        following_ids = [f.id for f in g.user.following]
+        following_ids.append(g.user.id)
+        messages = (Message.query
+                    .filter(Message.user_id.in_(following_ids))
                     .order_by(Message.timestamp.desc())
                     .limit(100)
                     .all())
-        return render_template('home.html', messages=messages)
+        liked_message_ids = {like.message_id for like in g.user.likes}
+        return render_template('home.html', messages=messages, likes=liked_message_ids)
     return render_template('home-anon.html')
 
 
