@@ -2,7 +2,6 @@
 from datetime import datetime
 from flask_bcrypt import Bcrypt
 from flask_sqlalchemy import SQLAlchemy
-from flask_login import UserMixin
 
 bcrypt = Bcrypt()
 db = SQLAlchemy()
@@ -94,14 +93,16 @@ class User(db.Model):
         "User",
         secondary="follows",
         primaryjoin=(Follows.user_being_followed_id == id),
-        secondaryjoin=(Follows.user_following_id == id)
+        secondaryjoin=(Follows.user_following_id == id),
+        overlaps="following"
     )
 
     following = db.relationship(
         "User",
         secondary="follows",
         primaryjoin=(Follows.user_following_id == id),
-        secondaryjoin=(Follows.user_being_followed_id == id)
+        secondaryjoin=(Follows.user_being_followed_id == id),
+        overlaps="followers"
     )
 
     likes = db.relationship(
@@ -117,6 +118,14 @@ class User(db.Model):
     def get_id(self):
         """Return the email address to satisfy Flask-Login's requirements."""
         return self.id
+    
+    def is_authenticated(self):
+        """Return True is user is authenticated."""
+        return True
+    
+    def is_anonymous(self):
+        """False, as anonymous users aren't supported."""
+        return False
 
     def __repr__(self):
         return f"<User #{self.id}: {self.username}, {self.email}>"
@@ -132,7 +141,6 @@ class User(db.Model):
     @classmethod
     def signup(cls, username, email, password, image_url):
         """Sign up user. Hashes password and adds user to system."""
-
         hashed_pwd = bcrypt.generate_password_hash(password).decode('UTF-8')
 
         user = User(
@@ -155,7 +163,6 @@ class User(db.Model):
 
         If can't find matching user (or if password is wrong), returns False.
         """
-
         user = cls.query.filter_by(username=username).first()
 
         if user:
@@ -168,7 +175,6 @@ class User(db.Model):
 
 class Message(db.Model):
     """An individual message ("warble")."""
-
     __tablename__ = 'messages'
 
     id = db.Column(
@@ -198,6 +204,5 @@ def connect_db(app):
 
     You should call this in your Flask app.
     """
-
     db.app = app
     db.init_app(app)
