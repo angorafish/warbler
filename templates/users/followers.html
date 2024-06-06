@@ -1,12 +1,17 @@
 {% extends 'users/detail.html' %}
 {% block user_details %}
-  <div class="col-sm-9">
-    <div class="row">
-      {% for follower in user.followers %}
-        <div class="col-lg-4 col-md-6 col-12">
-          {% include 'user_card.html' with user=follower %}
-        </div>
-      {% endfor %}
+  <div class="row">
+    <div class="col-sm-6 offset-sm-3">
+      <h4>{{ user.username }}'s Followers</h4>
+      <ul class="list-group">
+        {% for follower in user.followers %}
+        <li class="list-group-item">
+          <img src="{{ follower.image_url }}" alt="{{ follower.username }}" class="timeline-image">
+          <a href="/users/{{ follower.id }}">@{{ follower.username }}</a>
+          <p>{{ follower.bio }}</p>
+        </li>
+        {% endfor %}
+      </ul>
     </div>
   </div>
 {% endblock %}

@@ -48,6 +48,7 @@ def do_login(user):
     """Log in user."""
     session[CURR_USER_KEY] = user.id
     login_user(user)
+    return redirect("/")
 
 def do_logout():
     """Log out user."""
@@ -188,23 +189,24 @@ def stop_following(follow_id):
 
 
 @app.route('/users/profile', methods=["GET", "POST"])
+@login_required
 def profile():
     """Update profile for current user."""
-    if not g.user:
-        flash("Access unauthorized.", "danger")
-        return redirect("/")
-    form = UserAddForm(obj=g.user)
+    form = UserAddForm(obj=current_user)
     if form.validate_on_submit():
-        if not User.authenticate(g.user.username, form.password.data):
+        if not User.authenticate(current_user.username, form.password.data):
             flash("Invalid password.", 'danger')
-            return redirect("/")
+            return redirect(url_for('homepage'))
         
-        g.user.username = form.username.data
-        g.user.email = form.email.data
-        g.user.image_url = form.image_url.data
-        g.user.header_image_url = form.header_image_url.data
-        g.user.bio = form.bio.data
+        current_user.username = form.username.data
+        current_user.email = form.email.data
+        current_user.image_url = form.image_url.data
+        current_user.header_image_url = form.header_image_url.data
+        current_user.bio = form.bio.data
+        current_user.location = form.location.data
+
         db.session.commit()
+        flash("Profile updated successfully.", 'success')
         return redirect(url_for('users_show', user_id=g.user.id))
     return render_template('users/edit.html', form=form)
 

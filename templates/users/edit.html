@@ -1,29 +1,65 @@
 {% extends 'base.html' %}
 {% block content %}
   <div class="row justify-content-md-center">
-    <div class="col-md-4">
-      <h2 class="join-message">Edit Your Profile.</h2>
+    <div class="col-md-6">
+      <h2 class="join-message">Edit Your Profile</h2>
       <form method="POST" id="user_form">
         {{ form.hidden_tag() }}
 
-        {% for field in form if field.widget.input_type != 'hidden' and field.name != 'password' %}
-          <div class="form-group">
-            <label for="{{ field.id }}">{{ field.label.text }}</label>
-            {{ field(placeholder=field.label.text, class="form-control") }}
-            {% for error in field.errors %}
+        <div class="form-group">
+          <label for="{{ form.username.id }}">Username</label>
+          {{ form.username(class="form-control") }}
+          {% for error in form.username.errors %}
             <span class="text-danger">{{ error }}</span>
           {% endfor %}
         </div>
-        {% endfor %}
+
+        <div class="form-group">
+          <label for="{{ form.email.id }}">Email</label>
+          {{ form.email(class="form-control") }}
+          {% for error in form.email.errors %}
+            <span class="text-danger">{{ error }}</span>
+          {% endfor %}
+        </div>
+
+        <div class="form-group">
+          <label for="{{ form.image_url.id }}">Image URL</label>
+          {{ form.image_url(class="form-control") }}
+          {% for error in form.image_url.errors %}
+            <span class="text-danger">{{ error }}</span>
+          {% endfor %}
+        </div>
+
+        <div class="form-group">
+          <label for="{{ form.header_image_url.id }}">Header Image URL</label>
+          {{ form.header_image_url(class="form-control") }}
+          {% for error in form.header_image_url.errors %}
+            <span class="text-danger">{{ error }}</span>
+          {% endfor %}
+        </div>
+
+        <div class="form-group">
+          <label for="{{ form.bio.id }}">Bio</label>
+          {{ form.bio(class="form-control") }}
+          {% for error in form.bio.errors %}
+            <span class="text-danger">{{ error }}</span>
+          {% endfor %}
+        </div>
+
+        <div class="form-group">
+          <label for="{{ form.location.id }}">Location</label>
+          {{ form.location(class="form-control") }}
+          {% for error in form.location.errors %}
+            <span class="text-danger">{{ error }}</span>
+          {% endfor %}
+        </div>
 
         <p>To confirm changes, enter your password:</p>
         <div class="form-group">
           <label for="{{ form.password.id }}">Password</label>
           {{ form.password(placeholder="Enter your password to confirm", class="form-control") }}
           {% for error in form.password.errors %}
-            <span class="text-danger">
-            {{ error }}
-          </span>
+            <span class="text-danger">{{ error }}</span>
           {% endfor %}
         </div>
 

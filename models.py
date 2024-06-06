@@ -45,7 +45,7 @@ class Likes(db.Model):
     )
 
 
-class User(db.Model, UserMixin):
+class User(db.Model):
     """User in the system."""
     __tablename__ = 'users'
 

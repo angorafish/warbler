@@ -3,15 +3,18 @@
   {% if users|length == 0 %}
     <h3>Sorry, no users found</h3>
   {% else %}
-    <div class="row justify-content-end">
-      <div class="col-sm-9">
-        <div class="row">
+    <div class="row">
+      <div class="col-sm-6 offset-sm-3">
+        <h4>Users</h4>
+        <ul class="list-group">
           {% for user in users %}
-            <div class="col-lg-4 col-md-6 col-12">
-              {% include 'user_card.html' %}
-            </div>
+          <li class="list-group-item">
+            <img src="{{ user.image_url }}" alt="{{ user.username }}" class="timeline-image">
+            <a href="/users/{{ user.id }}">@{{ user.username }}</a>
+            <p>{{ user.bio }}</p>
+          </li>
           {% endfor %}
-        </div>
+        </ul>
       </div>
     </div>
   {% endif %}
