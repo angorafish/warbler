@@ -267,6 +267,34 @@ def messages_show(message_id):
     msg = Message.query.get(message_id)
     return render_template('messages/show.html', message=msg)
 
+@app.route('/messages/<int:message_id>/like', methods=['POST'])
+@login_required
+def like_message(message_id):
+    """Like a message."""
+    messsage = Message.query.get_or_404(message_id)
+    if message.user_id == current_user.id:
+        flash("You cannot like your own warble.", 'danger')
+        return redirect(url_for('homepage'))
+    
+    like = Likes.query.filter_by(user_id=current_user.id, message_id=message_id).first()
+    if not like:
+        new_like = Likes(user_id=current_user.id, message_id=message_id)
+        db.session.add(new_like)
+        db.session.commit()
+        flash("Warble liked!", "success")
+    return redirect(url_for('homepage'))
+
+@app.route('/messages/<int:message_id>/unlike', methods=['POST'])
+@login_required
+def unlike_message(message_id):
+    """Unlike a message."""
+    like = Likes.query.filter_by(user_id=current_user.id, message_id=message_id).first()
+    if like:
+        db.session.delete(like)
+        db.session.commit()
+        flash("Warble unliked!", "success")
+    return redirect(url_for('homepage'))
+
 
 @app.route('/messages/<int:message_id>/delete', methods=["POST"])
 @login_required

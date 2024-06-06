@@ -7,22 +7,53 @@
   </div>
   <div class="profile-info">
     <img src="{{ user.image_url }}" alt="{{ user.username }}" class="profile-image">
-    <p class="location">{{ user.location }}</p>
+    <p class="location"><span class="fa fa-map-marker"></span> {{ user.location }}</p>
     <p class="bio">{{ user.bio }}</p>
+    <ul class="user-stats nav nav-pills">
+      <li class="stat">
+        <p class="small">Messages</p>
+        <h4>
+          <a href="/users/{{ user.id }}">{{ user.messages | length }}</a>
+        </h4>
+      </li>
+      <li class="stat">
+        <p class="small">Following</p>
+        <h4>
+          <a href="/users/{{ user.id }}/following">{{ user.following | length }}</a>
+        </h4>
+      </li>
+      <li class="stat">
+        <p class="small">Followers</p>
+        <h4>
+          <a href="/users/{{ user.id }}/followers">{{ user.followers | length }}</a>
+        </h4>
+      </li>
+      <li class="stat">
+        <p class="small">Likes</p>
+        <h4>
+          <a href="/users/{{ user.id }}/likes">{{ user.likes | length }}</a>
+        </h4>
+      </li>
+    </ul>
   </div>
   <div class="col-sm-6">
     <ul class="list-group" id="messages">
       {% for message in messages %}
         <li class="list-group-item">
           <a href="/messages/{{ message.id }}" class="message-link"/>
-          <a href="/users/{{ user.id }}">
-            <img src="{{ user.image_url }}" alt="user image" class="timeline-image">
+          <a href="/users/{{ message.user.id }}">
+            <img src="{{ message.user.image_url }}" alt="user image" class="timeline-image">
           </a>
           <div class="message-area">
-            <a href="/users/{{ user.id }}">@{{ user.username }}</a>
+            <a href="/users/{{ message.user.id }}">@{{ message.user.username }}</a>
             <span class="text-muted">{{ message.timestamp.strftime('%d %B %Y') }}</span>
             <p>{{ message.text }}</p>
           </div>
+          <form method="POST" action="/messages/{{ message.id }}/{{ 'unlike' if message.id in likes else 'like' }}">
+            <button type="submit" class="btn btn-sm {{ 'btn-primary' if message.id in likes else 'btn-secondary' }}">
+              <i class="fa fa-thumbs-up"></i> {{ 'Unlike' if message.id in likes else 'Like' }}
+            </button>
+          </form>
         </li>
       {% endfor %}
     </ul>
