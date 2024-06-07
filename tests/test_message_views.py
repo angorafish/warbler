@@ -1,47 +1,29 @@
-"""Message View tests."""
-
-
 import os
 from unittest import TestCase
+from models import db, connect_db, Message, User, Likes
+from app import app, CURR_USER_KEY
+from tests import BaseTestCase
 
-from models import db, connect_db, Message, User, Likes, Like
-
-# BEFORE we import our app, let's set an environmental variable
-# to use a different database for tests (we need to do this
-# before we import our app, since that will have already
-# connected to the database
-
+# Set an environmental variable to use a different database for tests
 os.environ['DATABASE_URL'] = "postgresql:///warbler-test"
 
-
-# Now we can import app
-
-from app import app, CURR_USER_KEY
-
-# Create our tables (we do this here, so we only create the tables
-# once for all tests --- in each test, we'll delete the data
-# and create fresh new clean test data
-
+# Create all tables
 db.create_all()
 
-# Don't have WTForms use CSRF at all, since it's a pain to test
-
-app.config['WTF_CSRF_ENABLED'] = False
-
-
-class MessageViewTestCase(TestCase):
+class MessageViewTestCase(BaseTestCase):
     """Test views for messages."""
 
     def setUp(self):
         """Create test client, add sample data."""
-        db.drop_all()
-        db.create_all()
-
+        super().setUp()
         self.client = app.test_client()
+
+        User.query.delete()
+        Message.query.delete()
+        Likes.query.delete()
 
         self.user1 = User.signup("testuser1", "test1@test.com", "password", None)
         self.user2 = User.signup("testuser2", "test2@test.com", "password", None)
-
         db.session.commit()
 
         self.msg1 = Message(text="Message 1", user_id=self.user1.id)
@@ -52,6 +34,7 @@ class MessageViewTestCase(TestCase):
 
     def tearDown(self):
         """Clean up any fouled transaction."""
+        super().tearDown()
         db.session.rollback()
 
     def test_add_message_logged_in(self):
@@ -70,6 +53,16 @@ class MessageViewTestCase(TestCase):
             resp = c.post("/messages/new", data={"text": "New message"}, follow_redirects=True)
             self.assertEqual(resp.status_code, 200)
             self.assertIn("Access unauthorized.", str(resp.data))
+
+    def test_add_message_as_another_user(self):
+        """Are logged-in users prohibited from adding a message as another user?"""
+        with self.client as c:
+            with c.session_transaction() as sess:
+                sess[CURR_USER_KEY] = self.user1.id
+
+            resp = c.post(f"/messages/new", data={"text": "Message as another user", "user_id": self.user2.id}, follow_redirects=True)
+            self.assertEqual(resp.status_code, 200)
+            self.assertNotIn("Message as another user", str(resp.data))
     
     def test_delete_message_logged_in(self):
         """Can a logged in user delete their own message?"""
@@ -140,23 +133,58 @@ class MessageViewTestCase(TestCase):
             db.session.add(like)
             db.session.commit()
 
-            resp = c.post(f"/,essages/{self.msg2.id}/unlike", follow_redirects=True)
+            resp = c.post(f"/messages/{self.msg2.id}/unlike", follow_redirects=True)
             self.assertEqual(resp.status_code, 200)
             self.assertIn("Access unauthorized.", str(resp.data))
 
-    def test_like_message(self):
-        """Can a logged in user like a message?"""
+    def test_view_messages_logged_in(self):
+        """Can a logged-in user view messages?"""
         with self.client as c:
             with c.session_transaction() as sess:
-                sess[CURR_USER_KEY] = self.u1.id
+                sess[CURR_USER_KEY] = self.user1.id
 
-            msg = Message(text="Test message", user_id=self.u2.id)
-            db.session.add(msg)
+            resp = c.get(f"/users/{self.user1.id}/messages")
+            self.assertEqual(resp.status_code, 200)
+            self.assertIn("Message 1", str(resp.data))
+            self.assertIn("Message 2", str(resp.data))
+
+    def test_view_messages_logged_out(self):
+        """Can a logged-out user view messages?"""
+        with self.client as c:
+            resp = c.get(f"/users/{self.user1.id}/messages")
+            self.assertEqual(resp.status_code, 200)
+            self.assertIn("Message 1", str(resp.data))
+            self.assertIn("Message 2", str(resp.data))
+
+    def test_view_single_message(self):
+        """Can a user view a single message?"""
+        with self.client as c:
+            resp = c.get(f"/messages/{self.msg1.id}")
+            self.assertEqual(resp.status_code, 200)
+            self.assertIn("Message 1", str(resp.data))
+
+    def test_view_liked_message(self):
+        """Can a user view a liked message?"""
+        with self.client as c:
+            with c.session_transaction() as sess:
+                sess[CURR_USER_KEY] = self.user1.id
+            
+            like = Likes(user_id=self.user1.id, message_id=self.msg2.id)
+            db.session.add(like)
             db.session.commit()
 
-            resp = c.post(f"/messages/{msg.id}/like", follow_redirects=True)
+            resp = c.get(f"/messages/{self.msg2.id}")
             self.assertEqual(resp.status_code, 200)
-            self.assertIn("Warble liked!", str(resp.data))
+            self.assertIn("Message 2", str(resp.data))
+            self.assertIn("liked", str(resp.data))
 
-            like = Like.query.filter_by(user_id=self.u1.id, message_id=msg.id).first()
-            self.assertIsNotNone(like)
+    def test_view_messages_by_other_user(self):
+        """Can a user view messages by another user?"""
+        with self.client as c:
+            resp = c.get(f"/users/{self.user2.id}/messages")
+            self.assertEqual(resp.status_code, 200)
+            self.assertIn("Message 2", str(resp.data))
+
+if __name__ == '__main__':
+    import unittest
+    unittest.main()
